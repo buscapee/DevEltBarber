@@ -2,18 +2,20 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "../_components/ui/button"
-import { Input } from "../_components/ui/input"
-import { Label } from "../_components/ui/label"
-import { toast } from "sonner"
+import { Button } from "@/app/_components/ui/button"
+import { Input } from "@/app/_components/ui/input"
+import { Label } from "@/app/_components/ui/label"
+import { AuthLayout } from "@/app/_components/auth-layout"
 
 export default function RegisterPage() {
   const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsLoading(true)
+    setError(null)
 
     const formData = new FormData(event.currentTarget)
     const name = formData.get("name") as string
@@ -35,73 +37,73 @@ export default function RegisterPage() {
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.message)
+        throw new Error(data.message || "Erro ao criar conta")
       }
 
-      toast.success("Conta criada com sucesso!")
       router.push("/login")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao criar conta")
+      setError(error instanceof Error ? error.message : "Erro ao criar conta")
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-sm space-y-8 rounded-lg border p-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold">Criar conta</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Preencha os dados abaixo para criar sua conta
-          </p>
+    <AuthLayout
+      title="Criar conta"
+      subtitle="Preencha os dados abaixo para se registrar"
+      footerText="Já tem uma conta?"
+      footerLinkText="Faça login"
+      footerLinkHref="/login"
+    >
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Nome</Label>
+          <Input
+            id="name"
+            name="name"
+            type="text"
+            placeholder="Seu nome completo"
+            required
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name">Nome</Label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                required
-                placeholder="Seu nome"
-              />
-            </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="seu@email.com"
+            required
+          />
+        </div>
 
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                required
-                placeholder="seu@email.com"
-              />
-            </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">Senha</Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="••••••••"
+            required
+          />
+        </div>
 
-            <div>
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                required
-                placeholder="********"
-              />
-            </div>
+        {error && (
+          <div className="text-sm text-red-500">
+            {error}
           </div>
+        )}
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading}
-          >
-            {isLoading ? "Criando conta..." : "Criar conta"}
-          </Button>
-        </form>
-      </div>
-    </div>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={isLoading}
+        >
+          {isLoading ? "Criando conta..." : "Criar conta"}
+        </Button>
+      </form>
+    </AuthLayout>
   )
 } 
