@@ -30,11 +30,15 @@ interface Booking {
 }
 
 const AdminPage = () => {
-  const { data } = useSession()
+  const { data: sessionData } = useSession()
   const router = useRouter()
   const [bookings, setBookings] = useState<Booking[]>([])
 
   useEffect(() => {
+    if (!sessionData?.user) {
+      return router.push("/")
+    }
+
     const fetchBookings = async () => {
       try {
         const response = await fetch("/api/admin/bookings")
