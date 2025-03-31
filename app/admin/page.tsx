@@ -33,27 +33,36 @@ const AdminPage = () => {
   const { data: sessionData } = useSession()
   const router = useRouter()
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [userCount, setUserCount] = useState(0)
 
   useEffect(() => {
     if (!sessionData?.user) {
       return router.push("/")
     }
 
-    const fetchBookings = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch("/api/admin/bookings")
-        if (!response.ok) {
+        const [bookingsResponse, usersResponse] = await Promise.all([
+          fetch("/api/admin/bookings"),
+          fetch("/api/users")
+        ])
+
+        if (!bookingsResponse.ok || !usersResponse.ok) {
           throw new Error()
         }
-        const data = await response.json()
-        setBookings(data)
+
+        const bookingsData = await bookingsResponse.json()
+        const usersData = await usersResponse.json()
+
+        setBookings(bookingsData)
+        setUserCount(usersData.length)
       } catch (error) {
         console.error(error)
-        toast.error("Erro ao carregar agendamentos!")
+        toast.error("Erro ao carregar dados!")
       }
     }
 
-    fetchBookings()
+    fetchData()
   }, [])
 
   const handleCancelBooking = async (id: string) => {
@@ -81,7 +90,12 @@ const AdminPage = () => {
       <div className="space-y-5 p-5">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">Painel Administrativo</h1>
-          <Button variant="outline" size="sm" className="gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => router.push("/admin/clients")}
+          >
             <Users className="h-4 w-4" />
             Clientes
           </Button>
@@ -104,7 +118,7 @@ const AdminPage = () => {
             </div>
             <div>
               <p className="text-sm text-gray-400">Clientes</p>
-              <p className="text-2xl font-bold">2</p>
+              <p className="text-2xl font-bold">{userCount}</p>
             </div>
           </Card>
 
