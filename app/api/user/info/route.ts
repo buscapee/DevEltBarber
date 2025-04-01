@@ -14,30 +14,39 @@ export async function PUT(request: Request) {
       )
     }
 
-    const { name, email, phoneNumber } = await request.json()
+    const { name, email, phoneNumber, image } = await request.json()
 
-    if (!name || !email || !phoneNumber) {
-      return NextResponse.json(
-        { message: "Dados incompletos" },
-        { status: 400 }
-      )
-    }
-
-    // Verifica se o email já está em uso por outro usuário
-    const existingUser = await db.user.findFirst({
+    // Busca o usuário atual para manter os dados existentes
+    const currentUser = await db.user.findUnique({
       where: {
-        email,
-        NOT: {
-          id: session.user.id
-        }
+        id: session.user.id
       }
     })
 
-    if (existingUser) {
+    if (!currentUser) {
       return NextResponse.json(
-        { message: "Este email já está em uso" },
-        { status: 400 }
+        { message: "Usuário não encontrado" },
+        { status: 404 }
       )
+    }
+
+    // Se email for fornecido, verifica se já está em uso
+    if (email && email !== currentUser.email) {
+      const existingUser = await db.user.findFirst({
+        where: {
+          email,
+          NOT: {
+            id: session.user.id
+          }
+        }
+      })
+
+      if (existingUser) {
+        return NextResponse.json(
+          { message: "Este email já está em uso" },
+          { status: 400 }
+        )
+      }
     }
 
     const updatedUser = await db.user.update({
@@ -45,9 +54,10 @@ export async function PUT(request: Request) {
         id: session.user.id,
       },
       data: {
-        name,
-        email,
-        phoneNumber,
+        name: name || currentUser.name,
+        email: email || currentUser.email,
+        phoneNumber: phoneNumber || currentUser.phoneNumber,
+        image: image !== undefined ? image : currentUser.image,
       },
     })
 
@@ -56,6 +66,7 @@ export async function PUT(request: Request) {
         name: updatedUser.name,
         email: updatedUser.email,
         phoneNumber: updatedUser.phoneNumber,
+        image: updatedUser.image,
       }
     })
   } catch (error) {

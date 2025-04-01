@@ -22,6 +22,14 @@ export const authOptions: AuthOptions = {
         const user = await db.user.findUnique({
           where: {
             email: credentials.email
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            password: true,
+            image: true,
+            phoneNumber: true,
           }
         })
 
@@ -39,6 +47,8 @@ export const authOptions: AuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name,
+          image: user.image,
+          phoneNumber: user.phoneNumber,
         }
       }
     })
@@ -51,12 +61,16 @@ export const authOptions: AuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
+        token.image = user.image
+        token.phoneNumber = user.phoneNumber
       }
       return token
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
+        session.user.image = token.image as string | null
+        session.user.phoneNumber = token.phoneNumber as string | null
       }
       return session
     },

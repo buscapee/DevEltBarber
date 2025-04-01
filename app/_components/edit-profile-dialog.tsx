@@ -31,6 +31,7 @@ export function EditProfileDialog() {
       const name = formData.get("name") as string
       const email = formData.get("email") as string
       const phoneNumber = formData.get("phoneNumber") as string
+      const imageUrl = formData.get("imageUrl") as string
 
       const response = await fetch("/api/user/info", {
         method: "PUT",
@@ -41,6 +42,7 @@ export function EditProfileDialog() {
           name,
           email,
           phoneNumber,
+          image: imageUrl,
         }),
       })
 
@@ -59,6 +61,7 @@ export function EditProfileDialog() {
           name: data.user.name,
           email: data.user.email,
           phoneNumber: data.user.phoneNumber,
+          image: data.user.image,
         },
       })
 
@@ -111,6 +114,49 @@ export function EditProfileDialog() {
     }
   }
 
+  async function handleUpdateImage(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setIsLoading(true)
+
+    try {
+      const formData = new FormData(event.currentTarget)
+      const imageUrl = formData.get("imageUrl") as string
+
+      const response = await fetch("/api/user/info", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          image: imageUrl,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.message || "Erro ao atualizar imagem")
+      }
+
+      const data = await response.json()
+      
+      // Atualiza a sessão com os novos dados
+      await updateSession({
+        ...session,
+        user: {
+          ...session?.user,
+          image: data.user.image,
+        },
+      })
+
+      toast.success("Imagem atualizada com sucesso!")
+      setIsOpen(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao atualizar imagem")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -124,9 +170,10 @@ export function EditProfileDialog() {
         </DialogHeader>
 
         <Tabs defaultValue="info" className="mt-4">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="info">Informações</TabsTrigger>
             <TabsTrigger value="password">Senha</TabsTrigger>
+            <TabsTrigger value="image">Imagem</TabsTrigger>
           </TabsList>
 
           <TabsContent value="info" className="mt-4">
@@ -206,6 +253,32 @@ export function EditProfileDialog() {
                   name="confirmPassword"
                   type="password"
                   required
+                />
+              </div>
+
+              <div className="flex justify-end gap-4">
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">
+                    Cancelar
+                  </Button>
+                </DialogClose>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? "Salvando..." : "Salvar"}
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="image" className="mt-4">
+            <form onSubmit={handleUpdateImage} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="imageUrl">URL da Imagem</Label>
+                <Input
+                  id="imageUrl"
+                  name="imageUrl"
+                  type="url"
+                  placeholder="https://exemplo.com/sua-imagem.jpg"
+                  defaultValue={session?.user?.image || ""}
                 />
               </div>
 
