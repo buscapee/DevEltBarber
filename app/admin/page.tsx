@@ -12,6 +12,7 @@ import { Card } from "../_components/ui/card"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../_components/ui/table"
+import { Avatar, AvatarImage, AvatarFallback } from "../_components/ui/avatar"
 
 interface Booking {
   id: string
@@ -21,6 +22,7 @@ interface Booking {
     name: string
     email: string
     phoneNumber: string | null
+    image: string | null
   }
   service: {
     name: string
@@ -175,11 +177,8 @@ const AdminPage = () => {
               <TableRow>
                 <TableHead>Status</TableHead>
                 <TableHead>Cliente</TableHead>
-                <TableHead>Contato</TableHead>
                 <TableHead>Serviço</TableHead>
-                <TableHead>Barbearia</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Horário</TableHead>
+                <TableHead>Data/Hora</TableHead>
                 <TableHead>Preço</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
@@ -187,7 +186,7 @@ const AdminPage = () => {
             <TableBody>
               {bookings.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center">
+                  <TableCell colSpan={6} className="text-center">
                     <p className="text-sm text-gray-400">Nenhum agendamento encontrado</p>
                   </TableCell>
                 </TableRow>
@@ -198,30 +197,38 @@ const AdminPage = () => {
                       <Badge variant="secondary">Confirmado</Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-gray-400" />
-                        <span className="font-medium">{booking.user.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm text-gray-400">
-                          <Mail className="h-4 w-4" />
-                          <span>{booking.user.email}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <Avatar className="h-8 w-8">
+                            {booking.user.image ? (
+                              <AvatarImage src={booking.user.image} alt={booking.user.name} className="hover:scale-[3] hover:absolute hover:z-50 transition-transform" />
+                            ) : (
+                              <AvatarFallback>
+                                <User className="h-4 w-4" />
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-400">
-                          <Phone className="h-4 w-4" />
-                          <span>{booking.user.phoneNumber || "Não informado"}</span>
-                          {booking.user.phoneNumber && (
-                            <a
-                              href={getWhatsAppLink(booking)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="ml-2 rounded-full bg-emerald-600 p-1 transition-colors hover:bg-emerald-500"
-                            >
-                              <MessageCircle className="h-3 w-3 text-white" />
-                            </a>
-                          )}
+                        <div className="flex flex-col">
+                          <span className="font-medium">{booking.user.name}</span>
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <Mail className="h-3 w-3" />
+                            <span>{booking.user.email}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <Phone className="h-3 w-3" />
+                            <span>{booking.user.phoneNumber || "Não informado"}</span>
+                            {booking.user.phoneNumber && (
+                              <a
+                                href={getWhatsAppLink(booking)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded-full bg-emerald-600 p-1 transition-colors hover:bg-emerald-500"
+                              >
+                                <MessageCircle className="h-3 w-3 text-white" />
+                              </a>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </TableCell>
@@ -229,18 +236,15 @@ const AdminPage = () => {
                       <span className="font-medium">{booking.service.name}</span>
                     </TableCell>
                     <TableCell>
-                      <span className="font-medium">{booking.service.barbershop.name}</span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        <span>{format(new Date(booking.date), "dd/MM/yyyy", { locale: ptBR })}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="h-4 w-4 text-gray-400" />
-                        <span>{format(new Date(booking.date), "HH:mm")}</span>
+                      <div className="flex flex-col gap-1 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <span>{format(new Date(booking.date), "dd/MM/yyyy", { locale: ptBR })}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-gray-400" />
+                          <span>{format(new Date(booking.date), "HH:mm")}</span>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
