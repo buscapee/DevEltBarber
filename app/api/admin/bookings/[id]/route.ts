@@ -1,12 +1,15 @@
+import { db } from "@/app/_lib/prisma"
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/_lib/auth"
-import { db } from "@/app/_lib/prisma"
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+interface DeleteParams {
+  params: {
+    id: string
+  }
+}
+
+export async function DELETE(request: Request, { params: { id } }: DeleteParams) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -30,18 +33,18 @@ export async function DELETE(
       )
     }
 
-    await db.booking.delete({
+    const booking = await db.booking.update({
       where: {
-        id: params.id,
+        id: id,
+      },
+      data: {
+        status: "CANCELED",
       },
     })
 
-    return NextResponse.json(
-      { message: "Agendamento cancelado com sucesso" },
-      { status: 200 }
-    )
+    return NextResponse.json(booking)
   } catch (error) {
-    console.error(error)
+    console.error("Erro ao cancelar agendamento:", error)
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }
