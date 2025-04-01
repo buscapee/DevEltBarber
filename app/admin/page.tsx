@@ -12,6 +12,7 @@ import { Card } from "../_components/ui/card"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../_components/ui/table"
+import Image from "next/image"
 
 interface Booking {
   id: string
@@ -37,6 +38,32 @@ const AdminPage = () => {
   const router = useRouter()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [userCount, setUserCount] = useState(0)
+
+  // Função para formatar o número de telefone e gerar o link do WhatsApp
+  const getWhatsAppLink = (booking: Booking) => {
+    if (!booking.user.phoneNumber) return ""
+    // Remove todos os caracteres não numéricos
+    const formattedNumber = booking.user.phoneNumber.replace(/\D/g, "")
+    // Adiciona o código do país (55 para Brasil) se não existir
+    const numberWithCountry = formattedNumber.startsWith("55") ? formattedNumber : `55${formattedNumber}`
+    
+    // Formata a data e hora
+    const data = format(new Date(booking.date), "dd/MM/yyyy", { locale: ptBR })
+    const hora = format(new Date(booking.date), "HH:mm")
+    const valor = Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(booking.service.price)
+
+    // Cria a mensagem personalizada
+    const message = encodeURIComponent(
+      `Olá, ${booking.user.name}! Somos da barbearia ${booking.service.barbershop.name}, ` +
+      `o seu serviço ${booking.service.name} na data ${data} e horário ${hora} ` +
+      `foi confirmado no valor de ${valor}.`
+    )
+    
+    return `https://wa.me/${numberWithCountry}?text=${message}`
+  }
 
   useEffect(() => {
     if (!sessionData?.user) {
@@ -186,6 +213,29 @@ const AdminPage = () => {
                         <div className="flex items-center gap-2 text-sm text-gray-400">
                           <Phone className="h-4 w-4" />
                           <span>{booking.user.phoneNumber || "Não informado"}</span>
+                          {booking.user.phoneNumber && (
+                            <a
+                              href={getWhatsAppLink(booking)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ml-2 rounded-full bg-emerald-600 p-1 transition-colors hover:bg-emerald-500"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="12"
+                                height="12"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="text-white"
+                              >
+                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                              </svg>
+                            </a>
+                          )}
                         </div>
                       </div>
                     </TableCell>
