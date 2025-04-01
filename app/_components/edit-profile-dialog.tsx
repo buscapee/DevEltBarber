@@ -118,7 +118,8 @@ export function EditProfileDialog() {
     }
   }
 
-  const handleUpdateImage = async () => {
+  const handleUpdateImage = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     try {
       setIsLoading(true)
 
