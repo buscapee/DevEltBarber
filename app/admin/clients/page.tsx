@@ -20,6 +20,7 @@ interface User {
   name: string
   email: string
   image: string | null
+  phoneNumber: string | null
   createdAt: string
 }
 
@@ -50,7 +51,8 @@ export default function ClientsPage() {
     const filtered = users.filter(
       (user) =>
         user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase())
+        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (user.phoneNumber?.toLowerCase() || "").includes(searchQuery.toLowerCase())
     )
     setFilteredUsers(filtered)
   }, [searchQuery, users])
@@ -101,19 +103,20 @@ export default function ClientsPage() {
                 <TableRow>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Telefone</TableHead>
                   <TableHead>Data de Cadastro</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center">
+                    <TableCell colSpan={4} className="text-center">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center">
+                    <TableCell colSpan={4} className="text-center">
                       Nenhum cliente encontrado
                     </TableCell>
                   </TableRow>
@@ -128,6 +131,7 @@ export default function ClientsPage() {
                         <span className="font-medium">{user.name}</span>
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.phoneNumber || "Não informado"}</TableCell>
                       <TableCell>{formatDate(user.createdAt)}</TableCell>
                     </TableRow>
                   ))
