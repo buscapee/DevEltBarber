@@ -132,35 +132,17 @@ export function EditProfileDialog() {
         const uploadData = new FormData()
         uploadData.append("file", selectedFile)
 
-        console.log("Iniciando upload do arquivo:", {
-          fileName: selectedFile.name,
-          fileType: selectedFile.type,
-          fileSize: selectedFile.size
-        })
-
         const uploadResponse = await fetch("/api/upload", {
           method: "POST",
           body: uploadData,
         })
 
-        console.log("Resposta do servidor:", {
-          status: uploadResponse.status,
-          statusText: uploadResponse.statusText
-        })
-
         if (!uploadResponse.ok) {
           const errorData = await uploadResponse.json()
-          console.error("Erro detalhado do servidor:", errorData)
           throw new Error(errorData.details || errorData.error || "Erro ao fazer upload da imagem")
         }
 
         const uploadResult = await uploadResponse.json()
-        console.log("Resultado do upload:", uploadResult)
-
-        if (!uploadResult.url) {
-          throw new Error("URL da imagem não retornada pelo servidor")
-        }
-
         imageUrl = uploadResult.url
       }
 
@@ -168,15 +150,35 @@ export function EditProfileDialog() {
         throw new Error("Por favor, selecione uma imagem ou forneça uma URL")
       }
 
-      console.log("Atualizando informações do usuário com a nova imagem:", imageUrl)
+      // Primeiro, atualiza no banco de dados
+      const response = await fetch("/api/user/info", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          image: imageUrl,
+        }),
+      });
 
-      await updateSession({
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Erro ao atualizar imagem no banco de dados");
+      }
+
+      // Depois, atualiza a sessão com a nova imagem e força uma atualização
+      const newSession = {
         ...session,
         user: {
           ...session?.user,
           image: imageUrl,
         },
-      })
+      };
+
+      await updateSession(newSession);
+
+      // Aguarda um momento para garantir que a sessão foi atualizada
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       toast.success("Imagem atualizada com sucesso!")
       setIsOpen(false)

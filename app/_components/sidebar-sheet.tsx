@@ -34,8 +34,10 @@ const SidebarSheet = () => {
   }, [data?.user?.id])
 
   useEffect(() => {
-    setTimestamp(Date.now())
-  }, [data?.user?.image])
+    if (data?.user) {
+      setTimestamp(Date.now())
+    }
+  }, [data])
 
   const imageUrl = data?.user?.image ? `${data.user.image}?t=${timestamp}` : ""
 
