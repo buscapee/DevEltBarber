@@ -4,6 +4,7 @@ import { db } from "./prisma"
 import { Adapter } from "next-auth/adapters"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { compare } from "bcryptjs"
+import { User } from "next-auth"
 
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(db) as Adapter,
@@ -49,7 +50,7 @@ export const authOptions: AuthOptions = {
           name: user.name,
           image: user.image,
           phoneNumber: user.phoneNumber,
-        }
+        } as User
       }
     })
   ],
