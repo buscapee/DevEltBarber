@@ -3,8 +3,15 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "../_lib/auth"
 import { db } from "../_lib/prisma"
+import { Booking, Barbershop } from "@prisma/client"
 
-export const getConfirmedBookings = async () => {
+type ConfirmedBooking = Booking & {
+  service: {
+    barbershop: Barbershop;
+  };
+}
+
+export const getConfirmedBookings = async (): Promise<ConfirmedBooking[]> => {
   const session = await getServerSession(authOptions)
   if (!session?.user) {
     return []
@@ -26,5 +33,5 @@ export const getConfirmedBookings = async () => {
     orderBy: {
       date: "asc",
     },
-  })
+  }) as Promise<ConfirmedBooking[]>
 }

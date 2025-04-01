@@ -12,13 +12,13 @@ import { authOptions } from "./_lib/auth"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { getConfirmedBookings } from "./_data/get-confirmed-bookings"
-import { Prisma } from "@prisma/client"
+import { Prisma, Booking, Barbershop } from "@prisma/client"
 
 const Home = async () => {
   try {
     const session = await getServerSession(authOptions)
     
-    let barbershops = []
+    let barbershops: Barbershop[] = []
     try {
       barbershops = await db.barbershop.findMany({
         orderBy: {
@@ -33,10 +33,16 @@ const Home = async () => {
       throw error
     }
 
-    let confirmedBookings = []
+    type ConfirmedBooking = Booking & {
+      service: {
+        barbershop: Barbershop;
+      };
+    }
+
+    let confirmedBookings: ConfirmedBooking[] = []
     if (session?.user) {
       try {
-        confirmedBookings = await getConfirmedBookings()
+        confirmedBookings = await getConfirmedBookings() as ConfirmedBooking[]
       } catch (error) {
         console.error("Erro ao buscar agendamentos:", error)
         // Não vamos lançar o erro aqui para não quebrar a página inteira
