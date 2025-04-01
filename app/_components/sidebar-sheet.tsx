@@ -11,6 +11,7 @@ import { signOut, useSession } from "next-auth/react"
 import { Avatar, AvatarImage } from "./ui/avatar"
 import SignInDialog from "./sign-in-dialog"
 import { useEffect, useState } from "react"
+import { EditProfileDialog } from "./edit-profile-dialog"
 
 const SidebarSheet = () => {
   const { data } = useSession()
@@ -45,9 +46,12 @@ const SidebarSheet = () => {
               <AvatarImage src={data?.user?.image ?? ""} />
             </Avatar>
 
-            <div className="flex flex-col gap-0.5">
-              <p className="text-sm font-medium">{data.user.name}</p>
-              <p className="text-xs text-gray-400">{data.user.email}</p>
+            <div className="flex flex-1 items-center gap-2">
+              <div className="flex flex-col gap-0.5">
+                <p className="text-sm font-medium">{data.user.name}</p>
+                <p className="text-xs text-gray-400">{data.user.email}</p>
+              </div>
+              <EditProfileDialog />
             </div>
           </div>
         ) : (
