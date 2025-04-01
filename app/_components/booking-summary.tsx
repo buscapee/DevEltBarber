@@ -1,12 +1,16 @@
 import { format } from "date-fns"
 import { Card, CardContent } from "./ui/card"
-import { Barbershop, BarbershopService } from "@prisma/client"
 import { ptBR } from "date-fns/locale"
 import { Calendar, Clock, Home } from "lucide-react"
 
 interface BookingSummaryProps {
-  service: Pick<BarbershopService, "name" | "price">
-  barbershop: Pick<Barbershop, "name">
+  service: {
+    name: string
+    price: number
+  }
+  barbershop: {
+    name: string
+  }
   selectedDate: Date
 }
 
