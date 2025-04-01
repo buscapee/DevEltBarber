@@ -17,8 +17,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { Pencil, Upload } from "lucide-react"
 import { toast } from "sonner"
 import { Avatar, AvatarImage } from "./ui/avatar"
-import { useRouter } from "next/navigation"
-import axios from "axios"
 
 export function EditProfileDialog() {
   const { data: session, update: updateSession } = useSession()
@@ -27,7 +25,6 @@ export function EditProfileDialog() {
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [imageMethod, setImageMethod] = useState<"url" | "upload">("url")
-  const router = useRouter()
 
   async function handleUpdateInfo(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
