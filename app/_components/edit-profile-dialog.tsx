@@ -190,31 +190,28 @@ export function EditProfileDialog() {
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      
       // Validar o tipo e tamanho do arquivo
-      const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"]
-      const maxSize = 5 * 1024 * 1024 // 5MB
+      const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+      const maxSize = 5 * 1024 * 1024; // 5MB
 
       if (!allowedTypes.includes(file.type)) {
-        toast.error("Tipo de arquivo não suportado. Use JPEG, PNG, GIF ou WEBP.")
-        return
+        toast.error("Tipo de arquivo não suportado. Use JPEG, PNG, GIF ou WEBP.");
+        return;
       }
 
       if (file.size > maxSize) {
-        toast.error("Arquivo muito grande. O tamanho máximo é 5MB.")
-        return
+        toast.error("Arquivo muito grande. O tamanho máximo é 5MB.");
+        return;
       }
 
-      setSelectedFile(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-      setImageMethod("upload")
+      setSelectedFile(file);
+      setPreviewImage(URL.createObjectURL(file));
+      setImageMethod("upload");
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
