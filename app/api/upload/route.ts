@@ -1,6 +1,13 @@
 import { v2 as cloudinary } from "cloudinary"
 import { NextRequest, NextResponse } from "next/server"
 
+// Log para debug das variáveis de ambiente
+console.log("Cloudinary Config:", {
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY ? "Definido" : "Não definido",
+  api_secret: process.env.CLOUDINARY_API_SECRET ? "Definido" : "Não definido"
+})
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
