@@ -14,13 +14,17 @@ import {
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
-import { Pencil } from "lucide-react"
+import { Pencil, Upload } from "lucide-react"
 import { toast } from "sonner"
+import { Avatar, AvatarImage } from "./ui/avatar"
 
 export function EditProfileDialog() {
   const { data: session, update: updateSession } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [imageMethod, setImageMethod] = useState<"url" | "upload">("url")
 
   async function handleUpdateInfo(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -119,8 +123,33 @@ export function EditProfileDialog() {
     setIsLoading(true)
 
     try {
-      const formData = new FormData(event.currentTarget)
-      const imageUrl = formData.get("imageUrl") as string
+      let imageUrl = ""
+
+      if (imageMethod === "url") {
+        const formData = new FormData(event.currentTarget)
+        imageUrl = formData.get("imageUrl") as string
+      } else if (selectedFile) {
+        // Criar um FormData para enviar o arquivo
+        const uploadData = new FormData()
+        uploadData.append("file", selectedFile)
+
+        // Enviar o arquivo para o servidor
+        const uploadResponse = await fetch("/api/upload", {
+          method: "POST",
+          body: uploadData,
+        })
+
+        if (!uploadResponse.ok) {
+          throw new Error("Erro ao fazer upload da imagem")
+        }
+
+        const uploadResult = await uploadResponse.json()
+        imageUrl = uploadResult.url
+      }
+
+      if (!imageUrl && !selectedFile) {
+        throw new Error("Por favor, selecione uma imagem ou forneça uma URL")
+      }
 
       const response = await fetch("/api/user/info", {
         method: "PUT",
@@ -139,7 +168,6 @@ export function EditProfileDialog() {
 
       const data = await response.json()
       
-      // Atualiza a sessão com os novos dados
       await updateSession({
         ...session,
         user: {
@@ -150,10 +178,25 @@ export function EditProfileDialog() {
 
       toast.success("Imagem atualizada com sucesso!")
       setIsOpen(false)
+      setPreviewImage(null)
+      setSelectedFile(null)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao atualizar imagem")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      setSelectedFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPreviewImage(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+      setImageMethod("upload")
     }
   }
 
@@ -271,15 +314,73 @@ export function EditProfileDialog() {
 
           <TabsContent value="image" className="mt-4">
             <form onSubmit={handleUpdateImage} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="imageUrl">URL da Imagem</Label>
-                <Input
-                  id="imageUrl"
-                  name="imageUrl"
-                  type="url"
-                  placeholder="https://exemplo.com/sua-imagem.jpg"
-                  defaultValue={session?.user?.image || ""}
-                />
+              <div className="flex justify-center mb-4">
+                <Avatar className="h-24 w-24 border-2 border-primary">
+                  <AvatarImage src={previewImage || session?.user?.image || ""} />
+                </Avatar>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={imageMethod === "url" ? "default" : "outline"}
+                    className="flex-1"
+                    onClick={() => setImageMethod("url")}
+                  >
+                    URL
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={imageMethod === "upload" ? "default" : "outline"}
+                    className="flex-1"
+                    onClick={() => setImageMethod("upload")}
+                  >
+                    Upload
+                  </Button>
+                </div>
+
+                {imageMethod === "url" ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="imageUrl">URL da Imagem</Label>
+                    <Input
+                      id="imageUrl"
+                      name="imageUrl"
+                      type="url"
+                      placeholder="https://exemplo.com/sua-imagem.jpg"
+                      defaultValue={session?.user?.image || ""}
+                      onChange={(e) => setPreviewImage(e.target.value)}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="imageFile">Upload de Imagem</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="imageFile"
+                        name="imageFile"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => document.getElementById("imageFile")?.click()}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Escolher arquivo
+                      </Button>
+                    </div>
+                    {selectedFile && (
+                      <p className="text-sm text-muted-foreground">
+                        Arquivo selecionado: {selectedFile.name}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-4">
