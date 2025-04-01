@@ -38,9 +38,11 @@ interface BookingItemProps {
     date: Date
     status: "PENDING" | "CONFIRMED" | "CANCELED" | "COMPLETED"
     service: {
+      id: string
       name: string
       price: number
       barbershop: {
+        id: string
         name: string
         imageUrl: string
         address: string
@@ -149,8 +151,13 @@ const BookingItem = ({ booking }: BookingItemProps) => {
 
           <div className="mb-3 mt-6">
             <BookingSummary
-              barbershop={barbershop}
-              service={booking.service}
+              service={{
+                name: booking.service.name,
+                price: booking.service.price,
+              }}
+              barbershop={{
+                name: booking.service.barbershop.name,
+              }}
               selectedDate={booking.date}
             />
           </div>
