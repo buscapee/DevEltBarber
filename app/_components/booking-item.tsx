@@ -1,6 +1,5 @@
 "use client"
 
-import { Prisma } from "@prisma/client"
 import { Avatar, AvatarImage } from "./ui/avatar"
 import { Badge } from "./ui/badge"
 import { format, isFuture } from "date-fns"
@@ -34,15 +33,19 @@ import BookingSummary from "./booking-summary"
 import { Calendar, Clock, MapPin } from "lucide-react"
 
 interface BookingItemProps {
-  booking: Prisma.BookingGetPayload<{
-    include: {
-      service: {
-        include: {
-          barbershop: true
-        }
+  booking: {
+    id: string
+    date: Date
+    status: "PENDING" | "CONFIRMED" | "CANCELED" | "COMPLETED"
+    service: {
+      name: string
+      price: number
+      barbershop: {
+        name: string
+        imageUrl: string
       }
     }
-  }>
+  }
 }
 
 // TODO: receber agendamento como prop
@@ -77,7 +80,9 @@ const BookingItem = ({ booking }: BookingItemProps) => {
               >
                 {isConfirmed ? "Confirmado" : "Finalizado"}
               </Badge>
-              <h3 className="font-semibold text-white">{booking.service.name}</h3>
+              <h3 className="font-semibold text-white">
+                {booking.service.name}
+              </h3>
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <Avatar className="h-6 w-6">
                   <AvatarImage src={booking.service.barbershop.imageUrl} />

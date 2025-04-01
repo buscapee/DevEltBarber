@@ -2,18 +2,17 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { db } from "@/app/_lib/prisma"
 import { authOptions } from "@/app/_lib/auth"
+import { Prisma } from "@prisma/client"
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
 
     if (!session?.user) {
-      return NextResponse.json(
-        { message: "Não autorizado" },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
     // Verifica se o usuário é admin
@@ -26,10 +25,17 @@ export async function GET() {
       },
     })
 
-    if (user?.role !== "ADMIN") {
+    if (!user) {
       return NextResponse.json(
-        { message: "Não autorizado" },
-        { status: 403 }
+        { error: "Usuário não encontrado" },
+        { status: 404 },
+      )
+    }
+
+    if (user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Acesso restrito a administradores" },
+        { status: 403 },
       )
     }
 
@@ -49,10 +55,28 @@ export async function GET() {
 
     return NextResponse.json(users)
   } catch (error) {
-    console.error(error)
+    console.error("Erro detalhado:", error)
+
+    if (error instanceof Prisma.PrismaClientInitializationError) {
+      return NextResponse.json(
+        { error: "Erro de conexão com o banco de dados" },
+        { status: 500 },
+      )
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json(
+        { error: `Erro do Prisma: ${error.code} - ${error.message}` },
+        { status: 500 },
+      )
+    }
+
     return NextResponse.json(
-      { message: "Erro interno do servidor" },
-      { status: 500 }
+      {
+        error: "Erro interno do servidor",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     )
   }
-} 
+}

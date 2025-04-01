@@ -7,18 +7,35 @@ import Header from "../_components/header"
 import { Button } from "../_components/ui/button"
 import { toast } from "sonner"
 import { Badge } from "../_components/ui/badge"
-import { Calendar, Clock, Mail, MessageCircle, Phone, User, Users, History, Loader2 } from "lucide-react"
+import {
+  Calendar,
+  Clock,
+  Mail,
+  MessageCircle,
+  Phone,
+  User,
+  Users,
+  History,
+  Loader2,
+} from "lucide-react"
 import { Card } from "../_components/ui/card"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../_components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../_components/ui/table"
 import { Avatar, AvatarImage, AvatarFallback } from "../_components/ui/avatar"
 import Link from "next/link"
 
 interface Booking {
   id: string
   date: string
-  status: string
+  status: "PENDING" | "CONFIRMED" | "CANCELED" | "COMPLETED"
   user: {
     name: string
     email: string
@@ -48,8 +65,10 @@ const AdminPage = () => {
     // Remove todos os caracteres não numéricos
     const formattedNumber = booking.user.phoneNumber.replace(/\D/g, "")
     // Adiciona o código do país (55 para Brasil) se não existir
-    const numberWithCountry = formattedNumber.startsWith("55") ? formattedNumber : `55${formattedNumber}`
-    
+    const numberWithCountry = formattedNumber.startsWith("55")
+      ? formattedNumber
+      : `55${formattedNumber}`
+
     // Formata a data e hora
     const data = format(new Date(booking.date), "dd/MM/yyyy", { locale: ptBR })
     const hora = format(new Date(booking.date), "HH:mm")
@@ -61,10 +80,10 @@ const AdminPage = () => {
     // Cria a mensagem personalizada
     const message = encodeURIComponent(
       `Olá, ${booking.user.name}! Somos da barbearia ${booking.service.barbershop.name}, ` +
-      `o seu serviço ${booking.service.name} na data ${data} e horário ${hora} ` +
-      `foi confirmado no valor de ${valor}.`
+        `o seu serviço ${booking.service.name} na data ${data} e horário ${hora} ` +
+        `foi confirmado no valor de ${valor}.`,
     )
-    
+
     return `https://wa.me/${numberWithCountry}?text=${message}`
   }
 
@@ -79,31 +98,36 @@ const AdminPage = () => {
     const fetchData = async () => {
       setIsLoading(true)
       try {
-        const [bookingsResponse, usersResponse] = await Promise.all([
-          fetch("/api/admin/bookings", {
-            cache: "no-store",
-            next: { revalidate: 0 }
-          }),
-          fetch("/api/users", {
-            cache: "no-store",
-            next: { revalidate: 0 }
-          })
-        ])
+        // Busca os agendamentos
+        const bookingsResponse = await fetch("/api/admin/bookings", {
+          cache: "no-store",
+        })
 
-        if (!bookingsResponse.ok || !usersResponse.ok) {
-          const bookingsError = await bookingsResponse.text()
-          const usersError = await usersResponse.text()
-          throw new Error(`Bookings: ${bookingsError}, Users: ${usersError}`)
+        if (!bookingsResponse.ok) {
+          const errorText = await bookingsResponse.text()
+          throw new Error(`Erro ao buscar agendamentos: ${errorText}`)
         }
 
         const bookingsData = await bookingsResponse.json()
-        const usersData = await usersResponse.json()
-
         setBookings(bookingsData)
+
+        // Busca os usuários
+        const usersResponse = await fetch("/api/users", {
+          cache: "no-store",
+        })
+
+        if (!usersResponse.ok) {
+          const errorText = await usersResponse.text()
+          throw new Error(`Erro ao buscar usuários: ${errorText}`)
+        }
+
+        const usersData = await usersResponse.json()
         setUserCount(usersData.length)
       } catch (error) {
         console.error("Erro detalhado:", error)
-        toast.error("Erro ao carregar dados!")
+        toast.error(
+          error instanceof Error ? error.message : "Erro ao carregar dados!",
+        )
       } finally {
         setIsLoading(false)
       }
@@ -117,29 +141,57 @@ const AdminPage = () => {
       const response = await fetch(`/api/admin/bookings/${id}`, {
         method: "DELETE",
       })
-      
+
       if (!response.ok) {
         const errorText = await response.text()
         throw new Error(errorText)
       }
-      
+
+      // Remove o agendamento da lista ou atualiza seu status
+      setBookings((prevBookings) =>
+        prevBookings.map((booking) =>
+          booking.id === id ? { ...booking, status: "CANCELED" } : booking,
+        ),
+      )
+      toast.success("Agendamento cancelado com sucesso!")
+    } catch (error) {
+      console.error("Erro ao cancelar agendamento:", error)
+      toast.error("Erro ao cancelar agendamento!")
+    }
+  }
+
+  const handleUpdateStatus = async (id: string, status: string) => {
+    try {
+      const response = await fetch(`/api/admin/bookings/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(errorText)
+      }
+
       // Atualiza o status do agendamento na lista
       setBookings((prevBookings) =>
         prevBookings.map((booking) =>
-          booking.id === id
-            ? { ...booking, status: "CANCELED" }
-            : booking
+          booking.id === id ? { ...booking, status } : booking,
         ),
       )
-      toast.success("Reserva cancelada com sucesso!")
+      toast.success(`Status atualizado para ${status}`)
     } catch (error) {
-      console.error("Erro ao cancelar:", error)
-      toast.error("Erro ao cancelar reserva!")
+      console.error("Erro ao atualizar status:", error)
+      toast.error("Erro ao atualizar status!")
     }
   }
 
   // Filtra apenas os agendamentos ativos (não cancelados) para a lista principal
-  const activeBookings = bookings.filter(booking => booking.status !== "CANCELED")
+  const activeBookings = bookings.filter(
+    (booking) => booking.status !== "CANCELED",
+  )
 
   if (isLoading) {
     return (
@@ -210,7 +262,9 @@ const AdminPage = () => {
           <div className="flex items-center justify-between border-b border-gray-800 pb-5">
             <div className="space-y-1">
               <h2 className="text-lg font-bold">Agendamentos</h2>
-              <p className="text-sm text-gray-400">Gerencie os agendamentos da barbearia</p>
+              <p className="text-sm text-gray-400">
+                Gerencie os agendamentos da barbearia
+              </p>
             </div>
           </div>
 
@@ -229,21 +283,45 @@ const AdminPage = () => {
               {activeBookings.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center">
-                    <p className="text-sm text-gray-400">Nenhum agendamento encontrado</p>
+                    <p className="text-sm text-gray-400">
+                      Nenhum agendamento encontrado
+                    </p>
                   </TableCell>
                 </TableRow>
               ) : (
                 activeBookings.map((booking) => (
                   <TableRow key={booking.id}>
                     <TableCell>
-                      <Badge variant="secondary">Confirmado</Badge>
+                      <Badge
+                        variant={
+                          booking.status === "COMPLETED"
+                            ? "default"
+                            : booking.status === "CANCELED"
+                              ? "destructive"
+                              : booking.status === "CONFIRMED"
+                                ? "secondary"
+                                : "outline"
+                        }
+                      >
+                        {booking.status === "COMPLETED"
+                          ? "Finalizado"
+                          : booking.status === "CANCELED"
+                            ? "Cancelado"
+                            : booking.status === "CONFIRMED"
+                              ? "Confirmado"
+                              : "Pendente"}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           <Avatar className="h-8 w-8">
                             {booking.user.image ? (
-                              <AvatarImage src={booking.user.image} alt={booking.user.name} className="hover:scale-[3] hover:absolute hover:z-50 transition-transform" />
+                              <AvatarImage
+                                src={booking.user.image}
+                                alt={booking.user.name}
+                                className="transition-transform hover:absolute hover:z-50 hover:scale-[3]"
+                              />
                             ) : (
                               <AvatarFallback>
                                 <User className="h-4 w-4" />
@@ -252,14 +330,18 @@ const AdminPage = () => {
                           </Avatar>
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-medium">{booking.user.name}</span>
+                          <span className="font-medium">
+                            {booking.user.name}
+                          </span>
                           <div className="flex items-center gap-2 text-xs text-gray-400">
                             <Mail className="h-3 w-3" />
                             <span>{booking.user.email}</span>
                           </div>
                           <div className="flex items-center gap-2 text-xs text-gray-400">
                             <Phone className="h-3 w-3" />
-                            <span>{booking.user.phoneNumber || "Não informado"}</span>
+                            <span>
+                              {booking.user.phoneNumber || "Não informado"}
+                            </span>
                             {booking.user.phoneNumber && (
                               <a
                                 href={getWhatsAppLink(booking)}
@@ -275,13 +357,19 @@ const AdminPage = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="font-medium">{booking.service.name}</span>
+                      <span className="font-medium">
+                        {booking.service.name}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1 text-sm">
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-gray-400" />
-                          <span>{format(new Date(booking.date), "dd/MM/yyyy", { locale: ptBR })}</span>
+                          <span>
+                            {format(new Date(booking.date), "dd/MM/yyyy", {
+                              locale: ptBR,
+                            })}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-gray-400" />
@@ -298,13 +386,40 @@ const AdminPage = () => {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleCancelBooking(booking.id)}
-                      >
-                        Cancelar
-                      </Button>
+                      <div className="flex gap-2">
+                        {booking.status === "PENDING" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              handleUpdateStatus(booking.id, "CONFIRMED")
+                            }
+                          >
+                            Confirmar
+                          </Button>
+                        )}
+                        {booking.status === "CONFIRMED" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              handleUpdateStatus(booking.id, "COMPLETED")
+                            }
+                          >
+                            Finalizar
+                          </Button>
+                        )}
+                        {(booking.status === "PENDING" ||
+                          booking.status === "CONFIRMED") && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleCancelBooking(booking.id)}
+                          >
+                            Cancelar
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -317,4 +432,4 @@ const AdminPage = () => {
   )
 }
 
-export default AdminPage 
+export default AdminPage
