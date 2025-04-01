@@ -32,7 +32,7 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from "../_components/ui/avatar"
 import Link from "next/link"
 
-interface Booking {
+interface BookingWithDetails {
   id: string
   date: string
   status: "PENDING" | "CONFIRMED" | "CANCELED" | "COMPLETED"
@@ -55,12 +55,12 @@ interface Booking {
 const AdminPage = () => {
   const { data: sessionData, status: sessionStatus } = useSession()
   const router = useRouter()
-  const [bookings, setBookings] = useState<Booking[]>([])
+  const [bookings, setBookings] = useState<BookingWithDetails[]>([])
   const [userCount, setUserCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
 
   // Função para formatar o número de telefone e gerar o link do WhatsApp
-  const getWhatsAppLink = (booking: Booking) => {
+  const getWhatsAppLink = (booking: BookingWithDetails) => {
     if (!booking.user.phoneNumber) return ""
     // Remove todos os caracteres não numéricos
     const formattedNumber = booking.user.phoneNumber.replace(/\D/g, "")
@@ -160,7 +160,10 @@ const AdminPage = () => {
     }
   }
 
-  const handleUpdateStatus = async (id: string, status: string) => {
+  const handleUpdateStatus = async (
+    id: string,
+    status: "PENDING" | "CONFIRMED" | "CANCELED" | "COMPLETED",
+  ) => {
     try {
       const response = await fetch(`/api/admin/bookings/${id}`, {
         method: "PATCH",
