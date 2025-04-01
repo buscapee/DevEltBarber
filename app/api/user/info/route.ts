@@ -14,9 +14,9 @@ export async function PUT(request: Request) {
       )
     }
 
-    const { name, email } = await request.json()
+    const { name, email, phoneNumber } = await request.json()
 
-    if (!name || !email) {
+    if (!name || !email || !phoneNumber) {
       return NextResponse.json(
         { message: "Dados incompletos" },
         { status: 400 }
@@ -47,6 +47,7 @@ export async function PUT(request: Request) {
       data: {
         name,
         email,
+        phoneNumber,
       },
     })
 
@@ -54,6 +55,7 @@ export async function PUT(request: Request) {
       user: {
         name: updatedUser.name,
         email: updatedUser.email,
+        phoneNumber: updatedUser.phoneNumber,
       }
     })
   } catch (error) {

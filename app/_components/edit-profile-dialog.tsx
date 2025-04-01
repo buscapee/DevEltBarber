@@ -30,6 +30,7 @@ export function EditProfileDialog() {
       const formData = new FormData(event.currentTarget)
       const name = formData.get("name") as string
       const email = formData.get("email") as string
+      const phoneNumber = formData.get("phoneNumber") as string
 
       const response = await fetch("/api/user/info", {
         method: "PUT",
@@ -39,6 +40,7 @@ export function EditProfileDialog() {
         body: JSON.stringify({
           name,
           email,
+          phoneNumber,
         }),
       })
 
@@ -56,6 +58,7 @@ export function EditProfileDialog() {
           ...session?.user,
           name: data.user.name,
           email: data.user.email,
+          phoneNumber: data.user.phoneNumber,
         },
       })
 
@@ -145,6 +148,18 @@ export function EditProfileDialog() {
                   name="email"
                   type="email"
                   defaultValue={session?.user?.email || ""}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber">Número de Celular</Label>
+                <Input
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  type="tel"
+                  placeholder="(00) 00000-0000"
+                  defaultValue={session?.user?.phoneNumber || ""}
                   required
                 />
               </div>
