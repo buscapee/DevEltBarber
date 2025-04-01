@@ -1,14 +1,14 @@
 "use client"
 
 import { Button } from "./ui/button"
-import { CalendarIcon, HomeIcon, LogInIcon, LogOutIcon, LayoutDashboardIcon } from "lucide-react"
+import { CalendarIcon, HomeIcon, LogInIcon, LogOutIcon, LayoutDashboardIcon, UserCircle } from "lucide-react"
 import { SheetClose, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet"
 import { quickSearchOptions } from "../_constants/search"
 import Link from "next/link"
 import Image from "next/image"
 import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog"
 import { signOut, useSession } from "next-auth/react"
-import { Avatar, AvatarImage } from "./ui/avatar"
+import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar"
 import SignInDialog from "./sign-in-dialog"
 import { useEffect, useState } from "react"
 import { EditProfileDialog } from "./edit-profile-dialog"
@@ -16,6 +16,7 @@ import { EditProfileDialog } from "./edit-profile-dialog"
 const SidebarSheet = () => {
   const { data } = useSession()
   const [isAdmin, setIsAdmin] = useState(false)
+  const [timestamp, setTimestamp] = useState(Date.now())
   const handleLogoutClick = () => signOut()
 
   useEffect(() => {
@@ -32,6 +33,12 @@ const SidebarSheet = () => {
     checkAdminStatus()
   }, [data?.user?.id])
 
+  useEffect(() => {
+    setTimestamp(Date.now())
+  }, [data?.user?.image])
+
+  const imageUrl = data?.user?.image ? `${data.user.image}?t=${timestamp}` : ""
+
   return (
     <SheetContent className="flex flex-col gap-6 overflow-y-auto p-0">
       <SheetHeader className="border-b border-gray-800 p-5">
@@ -43,7 +50,10 @@ const SidebarSheet = () => {
         {data?.user ? (
           <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8 border border-gray-800">
-              <AvatarImage src={data?.user?.image ?? ""} />
+              <AvatarImage src={imageUrl} />
+              <AvatarFallback>
+                <UserCircle className="h-6 w-6" />
+              </AvatarFallback>
             </Avatar>
 
             <div className="flex flex-1 items-center gap-2">
