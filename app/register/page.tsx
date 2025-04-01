@@ -21,6 +21,7 @@ export default function RegisterPage() {
     const name = formData.get("name") as string
     const email = formData.get("email") as string
     const password = formData.get("password") as string
+    const phoneNumber = formData.get("phoneNumber") as string
 
     try {
       const response = await fetch("/api/register", {
@@ -32,6 +33,7 @@ export default function RegisterPage() {
           name,
           email,
           password,
+          phoneNumber,
         }),
       })
 
@@ -75,6 +77,17 @@ export default function RegisterPage() {
             name="email"
             type="email"
             placeholder="seu@email.com"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="phoneNumber">Número de Celular</Label>
+          <Input
+            id="phoneNumber"
+            name="phoneNumber"
+            type="tel"
+            placeholder="(00) 00000-0000"
             required
           />
         </div>
