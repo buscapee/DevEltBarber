@@ -7,7 +7,7 @@ import Header from "../_components/header"
 import { Button } from "../_components/ui/button"
 import { toast } from "sonner"
 import { Badge } from "../_components/ui/badge"
-import { Calendar, Clock, Mail, MessageCircle, Phone, User, Users, History } from "lucide-react"
+import { Calendar, Clock, Mail, MessageCircle, Phone, User, Users, History, Loader2 } from "lucide-react"
 import { Card } from "../_components/ui/card"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -36,10 +36,11 @@ interface Booking {
 }
 
 const AdminPage = () => {
-  const { data: sessionData } = useSession()
+  const { data: sessionData, status: sessionStatus } = useSession()
   const router = useRouter()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [userCount, setUserCount] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
 
   // Função para formatar o número de telefone e gerar o link do WhatsApp
   const getWhatsAppLink = (booking: Booking) => {
@@ -68,19 +69,31 @@ const AdminPage = () => {
   }
 
   useEffect(() => {
+    if (sessionStatus === "loading") return
+
     if (!sessionData?.user) {
-      return router.push("/")
+      router.push("/")
+      return
     }
 
     const fetchData = async () => {
+      setIsLoading(true)
       try {
         const [bookingsResponse, usersResponse] = await Promise.all([
-          fetch("/api/admin/bookings"),
-          fetch("/api/users")
+          fetch("/api/admin/bookings", {
+            cache: "no-store",
+            next: { revalidate: 0 }
+          }),
+          fetch("/api/users", {
+            cache: "no-store",
+            next: { revalidate: 0 }
+          })
         ])
 
         if (!bookingsResponse.ok || !usersResponse.ok) {
-          throw new Error()
+          const bookingsError = await bookingsResponse.text()
+          const usersError = await usersResponse.text()
+          throw new Error(`Bookings: ${bookingsError}, Users: ${usersError}`)
         }
 
         const bookingsData = await bookingsResponse.json()
@@ -89,22 +102,27 @@ const AdminPage = () => {
         setBookings(bookingsData)
         setUserCount(usersData.length)
       } catch (error) {
-        console.error(error)
+        console.error("Erro detalhado:", error)
         toast.error("Erro ao carregar dados!")
+      } finally {
+        setIsLoading(false)
       }
     }
 
     fetchData()
-  }, [router, sessionData?.user])
+  }, [router, sessionData?.user, sessionStatus])
 
   const handleCancelBooking = async (id: string) => {
     try {
       const response = await fetch(`/api/admin/bookings/${id}`, {
         method: "DELETE",
       })
+      
       if (!response.ok) {
-        throw new Error()
+        const errorText = await response.text()
+        throw new Error(errorText)
       }
+      
       // Atualiza o status do agendamento na lista
       setBookings((prevBookings) =>
         prevBookings.map((booking) =>
@@ -115,13 +133,24 @@ const AdminPage = () => {
       )
       toast.success("Reserva cancelada com sucesso!")
     } catch (error) {
-      console.error(error)
+      console.error("Erro ao cancelar:", error)
       toast.error("Erro ao cancelar reserva!")
     }
   }
 
   // Filtra apenas os agendamentos ativos (não cancelados) para a lista principal
   const activeBookings = bookings.filter(booking => booking.status !== "CANCELED")
+
+  if (isLoading) {
+    return (
+      <>
+        <Header />
+        <div className="flex h-[calc(100vh-80px)] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </>
+    )
+  }
 
   return (
     <>

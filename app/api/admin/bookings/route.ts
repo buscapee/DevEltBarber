@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/_lib/auth"
 import { db } from "@/app/_lib/prisma"
+import { Prisma } from "@prisma/client"
 
 export const dynamic = 'force-dynamic'
 
@@ -20,12 +21,22 @@ export async function GET() {
       where: {
         id: session.user.id,
       },
+      select: {
+        role: true,
+      },
     })
 
-    if (user?.role !== "ADMIN") {
+    if (!user) {
       return NextResponse.json(
-        { error: "Não autorizado" },
-        { status: 401 }
+        { error: "Usuário não encontrado" },
+        { status: 404 }
+      )
+    }
+
+    if (user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Acesso restrito a administradores" },
+        { status: 403 }
       )
     }
 
@@ -57,9 +68,24 @@ export async function GET() {
 
     return NextResponse.json(bookings)
   } catch (error) {
-    console.error(error)
+    console.error("Erro detalhado:", error)
+
+    if (error instanceof Prisma.PrismaClientInitializationError) {
+      return NextResponse.json(
+        { error: "Erro de conexão com o banco de dados" },
+        { status: 500 }
+      )
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json(
+        { error: `Erro do Prisma: ${error.code} - ${error.message}` },
+        { status: 500 }
+      )
+    }
+
     return NextResponse.json(
-      { error: "Erro interno do servidor" },
+      { error: "Erro interno do servidor", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }
