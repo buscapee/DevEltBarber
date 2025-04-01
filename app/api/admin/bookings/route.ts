@@ -44,6 +44,7 @@ export async function GET() {
             name: true,
             email: true,
             phoneNumber: true,
+            image: true,
           },
         },
       },

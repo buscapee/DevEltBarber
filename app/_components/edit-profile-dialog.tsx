@@ -129,7 +129,6 @@ export function EditProfileDialog() {
         const formData = new FormData(event.currentTarget)
         imageUrl = formData.get("imageUrl") as string
       } else if (selectedFile) {
-        // Criar um FormData para enviar o arquivo
         const uploadData = new FormData()
         uploadData.append("file", selectedFile)
 
@@ -139,7 +138,6 @@ export function EditProfileDialog() {
           fileSize: selectedFile.size
         })
 
-        // Enviar o arquivo para o servidor
         const uploadResponse = await fetch("/api/upload", {
           method: "POST",
           body: uploadData,
@@ -189,13 +187,17 @@ export function EditProfileDialog() {
 
       const data = await response.json()
       
-      await updateSession({
+      // Atualiza a sessão com os novos dados
+      const result = await updateSession({
         ...session,
         user: {
           ...session?.user,
-          image: data.user.image,
+          image: imageUrl,
         },
       })
+
+      // Força uma atualização da página para refletir as mudanças
+      window.location.reload()
 
       toast.success("Imagem atualizada com sucesso!")
       setIsOpen(false)
