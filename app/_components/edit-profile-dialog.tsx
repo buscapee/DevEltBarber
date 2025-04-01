@@ -133,23 +133,44 @@ export function EditProfileDialog() {
         const uploadData = new FormData()
         uploadData.append("file", selectedFile)
 
+        console.log("Iniciando upload do arquivo:", {
+          fileName: selectedFile.name,
+          fileType: selectedFile.type,
+          fileSize: selectedFile.size
+        })
+
         // Enviar o arquivo para o servidor
         const uploadResponse = await fetch("/api/upload", {
           method: "POST",
           body: uploadData,
         })
 
+        console.log("Resposta do servidor:", {
+          status: uploadResponse.status,
+          statusText: uploadResponse.statusText
+        })
+
         if (!uploadResponse.ok) {
-          throw new Error("Erro ao fazer upload da imagem")
+          const errorData = await uploadResponse.json()
+          console.error("Erro detalhado do servidor:", errorData)
+          throw new Error(errorData.details || errorData.error || "Erro ao fazer upload da imagem")
         }
 
         const uploadResult = await uploadResponse.json()
+        console.log("Resultado do upload:", uploadResult)
+
+        if (!uploadResult.url) {
+          throw new Error("URL da imagem não retornada pelo servidor")
+        }
+
         imageUrl = uploadResult.url
       }
 
       if (!imageUrl && !selectedFile) {
         throw new Error("Por favor, selecione uma imagem ou forneça uma URL")
       }
+
+      console.log("Atualizando informações do usuário com a nova imagem:", imageUrl)
 
       const response = await fetch("/api/user/info", {
         method: "PUT",
@@ -181,6 +202,7 @@ export function EditProfileDialog() {
       setPreviewImage(null)
       setSelectedFile(null)
     } catch (error) {
+      console.error("Erro ao processar imagem:", error)
       toast.error(error instanceof Error ? error.message : "Erro ao atualizar imagem")
     } finally {
       setIsLoading(false)
@@ -190,6 +212,20 @@ export function EditProfileDialog() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
+      // Validar o tipo e tamanho do arquivo
+      const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+      const maxSize = 5 * 1024 * 1024 // 5MB
+
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Tipo de arquivo não suportado. Use JPEG, PNG, GIF ou WEBP.")
+        return
+      }
+
+      if (file.size > maxSize) {
+        toast.error("Arquivo muito grande. O tamanho máximo é 5MB.")
+        return
+      }
+
       setSelectedFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {

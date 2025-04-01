@@ -19,32 +19,73 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Log para debug
+    console.log("Arquivo recebido:", {
+      name: file.name,
+      type: file.type,
+      size: file.size
+    })
+
     // Converter o arquivo para um buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Upload para o Cloudinary
-    const result = await new Promise((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(
+    // Upload para o Cloudinary usando Promise
+    const uploadToCloudinary = () => {
+      return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
           {
             resource_type: "auto",
             folder: "profile-images",
           },
           (error, result) => {
-            if (error) reject(error)
-            resolve(result)
+            if (error) {
+              console.error("Erro no Cloudinary:", error)
+              reject(error)
+            } else {
+              resolve(result)
+            }
           }
         )
-        .end(buffer)
+
+        // Escrever o buffer no stream
+        uploadStream.end(buffer)
+      })
+    }
+
+    const result = await uploadToCloudinary()
+
+    // Log do resultado
+    console.log("Upload bem-sucedido:", result)
+
+    return NextResponse.json({ 
+      url: (result as any).secure_url,
+      success: true
     })
 
-    return NextResponse.json({ url: (result as any).secure_url })
   } catch (error) {
-    console.error("Erro no upload:", error)
+    // Log detalhado do erro
+    console.error("Erro detalhado no upload:", {
+      error,
+      message: error instanceof Error ? error.message : "Erro desconhecido",
+      stack: error instanceof Error ? error.stack : undefined
+    })
+
     return NextResponse.json(
-      { error: "Erro ao fazer upload do arquivo" },
+      { 
+        error: "Erro ao fazer upload do arquivo",
+        details: error instanceof Error ? error.message : "Erro desconhecido"
+      },
       { status: 500 }
     )
   }
+}
+
+// Configurar o tamanho máximo do payload
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
 } 
