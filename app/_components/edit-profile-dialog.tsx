@@ -17,6 +17,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { Pencil, Upload } from "lucide-react"
 import { toast } from "sonner"
 import { Avatar, AvatarImage } from "./ui/avatar"
+import { useRouter } from "next/navigation"
+import axios from "axios"
 
 export function EditProfileDialog() {
   const { data: session, update: updateSession } = useSession()
@@ -25,6 +27,7 @@ export function EditProfileDialog() {
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [imageMethod, setImageMethod] = useState<"url" | "upload">("url")
+  const router = useRouter()
 
   async function handleUpdateInfo(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -118,11 +121,10 @@ export function EditProfileDialog() {
     }
   }
 
-  async function handleUpdateImage(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setIsLoading(true)
-
+  const handleUpdateImage = async () => {
     try {
+      setIsLoading(true)
+
       let imageUrl = ""
 
       if (imageMethod === "url") {
@@ -170,34 +172,13 @@ export function EditProfileDialog() {
 
       console.log("Atualizando informações do usuário com a nova imagem:", imageUrl)
 
-      const response = await fetch("/api/user/info", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          image: imageUrl,
-        }),
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.message || "Erro ao atualizar imagem")
-      }
-
-      const data = await response.json()
-      
-      // Atualiza a sessão com os novos dados
-      const result = await updateSession({
+      await updateSession({
         ...session,
         user: {
           ...session?.user,
           image: imageUrl,
         },
       })
-
-      // Força uma atualização da página para refletir as mudanças
-      window.location.reload()
 
       toast.success("Imagem atualizada com sucesso!")
       setIsOpen(false)
