@@ -31,13 +31,19 @@ export async function GET() {
       include: {
         service: {
           include: {
-            barbershop: true,
+            barbershop: {
+              select: {
+                name: true,
+                imageUrl: true,
+              },
+            },
           },
         },
         user: {
           select: {
             name: true,
             email: true,
+            phoneNumber: true,
           },
         },
       },

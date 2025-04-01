@@ -7,10 +7,11 @@ import Header from "../_components/header"
 import { Button } from "../_components/ui/button"
 import { toast } from "sonner"
 import { Badge } from "../_components/ui/badge"
-import { Calendar, Clock, User, Users } from "lucide-react"
+import { Calendar, Clock, Mail, Phone, User, Users } from "lucide-react"
 import { Card } from "../_components/ui/card"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../_components/ui/table"
 
 interface Booking {
   id: string
@@ -19,12 +20,14 @@ interface Booking {
   user: {
     name: string
     email: string
+    phoneNumber: string | null
   }
   service: {
     name: string
     price: number
     barbershop: {
       name: string
+      imageUrl: string
     }
   }
 }
@@ -141,53 +144,91 @@ const AdminPage = () => {
             </div>
           </div>
 
-          <div className="space-y-3">
-            {bookings.length === 0 ? (
-              <p className="text-center text-sm text-gray-400">Nenhum agendamento encontrado</p>
-            ) : (
-              bookings.map((booking) => (
-                <div
-                  key={booking.id}
-                  className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900 p-5"
-                >
-                  <div className="space-y-2">
-                    <Badge variant="secondary">Confirmado</Badge>
-                    <h3 className="font-medium">{booking.service.barbershop.name}</h3>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <User className="h-4 w-4" />
-                        <p>{booking.user.name}</p>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Status</TableHead>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Contato</TableHead>
+                <TableHead>Serviço</TableHead>
+                <TableHead>Barbearia</TableHead>
+                <TableHead>Data</TableHead>
+                <TableHead>Horário</TableHead>
+                <TableHead>Preço</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {bookings.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center">
+                    <p className="text-sm text-gray-400">Nenhum agendamento encontrado</p>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                bookings.map((booking) => (
+                  <TableRow key={booking.id}>
+                    <TableCell>
+                      <Badge variant="secondary">Confirmado</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-gray-400" />
+                        <span className="font-medium">{booking.user.name}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <Calendar className="h-4 w-4" />
-                        <p>{format(new Date(booking.date), "dd 'de' MMMM", { locale: ptBR })}</p>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                          <Mail className="h-4 w-4" />
+                          <span>{booking.user.email}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                          <Phone className="h-4 w-4" />
+                          <span>{booking.user.phoneNumber || "Não informado"}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <Clock className="h-4 w-4" />
-                        <p>{format(new Date(booking.date), "HH:mm")}</p>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">{booking.service.name}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">{booking.service.barbershop.name}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="h-4 w-4 text-gray-400" />
+                        <span>{format(new Date(booking.date), "dd/MM/yyyy", { locale: ptBR })}</span>
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col items-end justify-between gap-2">
-                    <p className="text-sm font-medium text-primary">
-                      {Intl.NumberFormat("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      }).format(booking.service.price)}
-                    </p>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleCancelBooking(booking.id)}
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="h-4 w-4 text-gray-400" />
+                        <span>{format(new Date(booking.date), "HH:mm")}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium text-primary">
+                        {Intl.NumberFormat("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        }).format(booking.service.price)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleCancelBooking(booking.id)}
+                      >
+                        Cancelar
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </Card>
       </div>
     </>
