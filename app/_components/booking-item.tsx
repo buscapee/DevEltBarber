@@ -43,6 +43,8 @@ interface BookingItemProps {
       barbershop: {
         name: string
         imageUrl: string
+        address: string
+        phones: string[]
       }
     }
   }
