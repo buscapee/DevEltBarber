@@ -7,12 +7,13 @@ import Header from "../_components/header"
 import { Button } from "../_components/ui/button"
 import { toast } from "sonner"
 import { Badge } from "../_components/ui/badge"
-import { Calendar, Clock, Mail, MessageCircle, Phone, User, Users } from "lucide-react"
+import { Calendar, Clock, Mail, MessageCircle, Phone, User, Users, History } from "lucide-react"
 import { Card } from "../_components/ui/card"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../_components/ui/table"
 import { Avatar, AvatarImage, AvatarFallback } from "../_components/ui/avatar"
+import Link from "next/link"
 
 interface Booking {
   id: string
@@ -104,9 +105,13 @@ const AdminPage = () => {
       if (!response.ok) {
         throw new Error()
       }
-      // Atualiza a lista de agendamentos removendo o item cancelado
+      // Atualiza o status do agendamento na lista
       setBookings((prevBookings) =>
-        prevBookings.filter((booking) => booking.id !== id),
+        prevBookings.map((booking) =>
+          booking.id === id
+            ? { ...booking, status: "CANCELED" }
+            : booking
+        ),
       )
       toast.success("Reserva cancelada com sucesso!")
     } catch (error) {
@@ -115,21 +120,29 @@ const AdminPage = () => {
     }
   }
 
+  // Filtra apenas os agendamentos ativos (não cancelados) para a lista principal
+  const activeBookings = bookings.filter(booking => booking.status !== "CANCELED")
+
   return (
     <>
       <Header />
       <div className="space-y-5 p-5">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">Painel Administrativo</h1>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={() => router.push("/admin/clients")}
-          >
-            <Users className="h-4 w-4" />
-            Clientes
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="secondary">
+              <Link href="/admin/clients">
+                <Users className="mr-2 h-4 w-4" />
+                Clientes
+              </Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/admin/history">
+                <History className="mr-2 h-4 w-4" />
+                Histórico
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3">
@@ -139,7 +152,7 @@ const AdminPage = () => {
             </div>
             <div>
               <p className="text-sm text-gray-400">Agendamentos</p>
-              <p className="text-2xl font-bold">{bookings.length}</p>
+              <p className="text-2xl font-bold">{activeBookings.length}</p>
             </div>
           </Card>
 
@@ -184,14 +197,14 @@ const AdminPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {bookings.length === 0 ? (
+              {activeBookings.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center">
                     <p className="text-sm text-gray-400">Nenhum agendamento encontrado</p>
                   </TableCell>
                 </TableRow>
               ) : (
-                bookings.map((booking) => (
+                activeBookings.map((booking) => (
                   <TableRow key={booking.id}>
                     <TableCell>
                       <Badge variant="secondary">Confirmado</Badge>
